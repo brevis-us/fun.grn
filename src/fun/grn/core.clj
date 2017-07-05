@@ -1,4 +1,4 @@
-(ns fungrneat.core
+(ns fun.grn.core
   (:require [clj-random.core :as random])
   (:import [evolver GRNGenome GRNGene]
            [evaluators GRNGenomeEvaluator]
