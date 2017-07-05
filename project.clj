@@ -7,4 +7,13 @@
                  [clj-random "0.1.8"]
                  [us.brevis/GRNEAT "0.0.3"]]
   :plugins [[lein-localrepo "0.5.4"]]
-  :repositories [["brevis-bintray" "https://dl.bintray.com/kephale/brevis"]])
+  :repositories [["brevis-bintray" "https://dl.bintray.com/kephale/brevis"]
+                 ["snapshots" {:url "https://clojars.org/repo"
+                     :username :env/CI_DEPLOY_USERNAME
+                     :password :env/CI_DEPLOY_PASSWORD
+                     :sign-releases false}]
+                 ["releases" {:url "https://clojars.org/repo"
+                                     :username :env/CI_DEPLOY_USERNAME
+                                     :password :env/CI_DEPLOY_PASSWORD
+                                     :sign-releases false}]
+                 ])
