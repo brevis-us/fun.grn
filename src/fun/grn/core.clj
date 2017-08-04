@@ -1,5 +1,6 @@
 (ns fun.grn.core
-  (:require [clj-random.core :as random])
+  (:require [clj-random.core :as random]
+            [brevis-utils.parameters :as params])
   (:import [evolver GRNGenome GRNGene]
            [evaluators GRNGenomeEvaluator]
            [grn GRNProtein GRNModel]
@@ -18,44 +19,30 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ## Globals
 
-(def params
-  (atom {:num-GRN-inputs 2
-        :num-GRN-outputs 2
-        :num-GRN-steps 1
-        :grn-mutation-add-max-size Integer/MAX_VALUE
-        :grn-mutation-add-probability 0.33
-        :grn-mutation-del-min-size 0
-        :grn-mutation-del-probability 0.33
-        :grn-mutation-change-probability 0.33
-        }))
-
-(defn set-param
-  "Set the value of a parameter."
-  [param val & more]
-  (swap! params assoc param val)
-  (when-not (empty? more)
-    (apply (partial set-param (first more) (second more))
-           (drop 2 more))))
-
-(defn get-param
-  "Get the value of a parameter."
-  [param]
-  (get @params param))
+(params/set-param
+  :num-GRN-inputs 2
+  :num-GRN-outputs 2
+  :num-GRN-steps 1
+  :grn-mutation-add-max-size Integer/MAX_VALUE
+  :grn-mutation-add-probability 0.33
+  :grn-mutation-del-min-size 0
+  :grn-mutation-del-probability 0.33
+  :grn-mutation-change-probability 0.33)
 
 (defn initialize-grneat
   "Initiatialize globals, such as evolutionary features."
   []
-  (let [mutators {(GRNAddGeneMutationOperator. (get-param :grn-mutation-add-max-size) (get-param :grn-mutation-add-probability)) (get-param :grn-mutation-add-probability),
-                  (GRNDeleteGeneMutationOperator. ^int (max (get-param :grn-mutation-del-min-size) (+ (get-param :num-GRN-inputs) (get-param :num-GRN-outputs) 1) (get-param :grn-mutation-del-probability))) (get-param :grn-mutation-del-probability),
-                  (GRNGeneMutationOperator. (get-param :grn-mutation-change-probability)) (get-param :grn-mutation-change-probability)}
+  (let [mutators {(GRNAddGeneMutationOperator. (params/get-param :grn-mutation-add-max-size) (params/get-param :grn-mutation-add-probability)) (params/get-param :grn-mutation-add-probability),
+                  (GRNDeleteGeneMutationOperator. ^int (max (params/get-param :grn-mutation-del-min-size) (+ (params/get-param :num-GRN-inputs) (params/get-param :num-GRN-outputs) 1) (params/get-param :grn-mutation-del-probability))) (params/get-param :grn-mutation-del-probability),
+                  (GRNGeneMutationOperator. (params/get-param :grn-mutation-change-probability)) (params/get-param :grn-mutation-change-probability)}
         crossovers {;(GRNAligningCrossoverOperator_v1.)
                     ;(GRNAligningCrossoverOperator_v1b.)
                     ;(GRNAligningCrossoverOperator_v2.)
                     ;(GRNOnePointCrossoverOperator.)
                     (GRNAligningCrossoverOperator_ParentCountProb.) nil}] 
-    (set-param :grn-rng (Random.))
-    (set-param :grn-mutators mutators)
-    (set-param :grn-crossovers crossovers)))
+    (params/set-param :grn-rng (Random.))
+    (params/set-param :grn-mutators mutators)
+    (params/set-param :grn-crossovers crossovers)))
 
 (defn make-genome
   "Make a genome."
@@ -65,16 +52,16 @@
         beta-min (.getBetaMin genome)
         delta-max (.getDeltaMax genome)
         delta-min (.getDeltaMin genome)]
-    (dotimes [k (get-param :num-GRN-inputs)]
+    (dotimes [k (params/get-param :num-GRN-inputs)]
       (.addGene genome 
-        (GRNGene/generateRandomGene GRNProtein/INPUT_PROTEIN k (get-param :grn-rng))))
-    (dotimes [k (get-param :num-GRN-outputs)]
+        (GRNGene/generateRandomGene GRNProtein/INPUT_PROTEIN k (params/get-param :grn-rng))))
+    (dotimes [k (params/get-param :num-GRN-outputs)]
       (.addGene genome
-        (GRNGene/generateRandomGene GRNProtein/OUTPUT_PROTEIN k (get-param :grn-rng))))
+        (GRNGene/generateRandomGene GRNProtein/OUTPUT_PROTEIN k (params/get-param :grn-rng))))
     ; Could to great init here (small genomes)
-    (dotimes [k (inc (random/lrand-int (- 50 (get-param :num-GRN-inputs) (get-param :num-GRN-outputs))))]
+    (dotimes [k (inc (random/lrand-int (- 50 (params/get-param :num-GRN-inputs) (params/get-param :num-GRN-outputs))))]
       (.addGene genome 
-        (GRNGene/generateRandomRegulatoryGene (get-param :grn-rng))))
+        (GRNGene/generateRandomRegulatoryGene (params/get-param :grn-rng))))
     (.setBeta genome (+ (* (- beta-max beta-min) (random/lrand)) beta-min))                        
     (.setDelta genome (+ (* (- delta-max delta-min) (random/lrand)) delta-min))
     genome))                        
@@ -118,21 +105,21 @@
   "Update the state of a GRN."
   [grn]
   (.evolve ^GRNModel (:state grn)
-    ^int (get-param :num-GRN-steps))
+    ^int (params/get-param :num-GRN-steps))
   grn)
 
 (defn get-grn-outputs
   "Get the GRN outputs."
   [grn]
   (let [proteins (.proteins ^GRNModel (:state grn))]
-    (for [oid (range (get-param :num-GRN-inputs)
-                     (+ (get-param :num-GRN-inputs) (get-param :num-GRN-outputs)))]
+    (for [oid (range (params/get-param :num-GRN-inputs)
+                     (+ (params/get-param :num-GRN-inputs) (params/get-param :num-GRN-outputs)))]
       (.getConcentration ^GRNProtein (.get proteins oid)))))
 
 (defn select-mutation-operator
   "Select a mutation operator."
   []
-  (let [rnd (random/lrand-nth (keys (get-param :grn-mutators)))]; we know uniform for now, laziness
+  (let [rnd (random/lrand-nth (keys (params/get-param :grn-mutators)))]; we know uniform for now, laziness
     rnd))
 
 (defn mutate
@@ -140,7 +127,7 @@
   [grn]
   (let [mutant-genome (loop []
                         (let [^GRNMutationOperator mutator (select-mutation-operator)
-                              mutant-genome (.cloneAndMutate mutator (:genome grn) (get-param :grn-rng) #_random/*RNG*)]
+                              mutant-genome (.cloneAndMutate mutator (:genome grn) (params/get-param :grn-rng) #_random/*RNG*)]
                           (if mutant-genome
                             mutant-genome
                             (recur))))
@@ -153,7 +140,7 @@
 (defn select-crossover-operator
   "Select a crossover operator."
   []
-  (let [rnd (random/lrand-nth (keys (get-param :grn-crossovers)))]; we know uniform for now, laziness
+  (let [rnd (random/lrand-nth (keys (params/get-param :grn-crossovers)))]; we know uniform for now, laziness
     rnd))
 
 (defn crossover
@@ -164,7 +151,7 @@
                               mutant-genome (.reproduce crossoveror
                                                  (:genome p1)
                                                  (:genome p2)
-                                                 (get-param :grn-rng))]
+                                                 (params/get-param :grn-rng))]
                           (if mutant-genome
                             mutant-genome
                             (recur))))
