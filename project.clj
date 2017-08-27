@@ -1,4 +1,4 @@
-(defproject fun.grn "0.1.1"
+(defproject fun.grn "0.1.2-SNAPSHOT"
   :description "Gene-regulatory networks in Clojure"
   :url "https://github.com/kephale/fun.grn"
   :license {:name "Eclipse Public License"
@@ -6,7 +6,7 @@
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [clj-random "0.1.8"]
                  [brevis.us/brevis-utils "0.1.1"]
-                 [us.brevis/GRNEAT "0.0.3"]]
+                 [fun.grn/grneat "0.0.4"]]
   :plugins [[lein-localrepo "0.5.4"]]
   :repositories [["brevis-bintray" "https://dl.bintray.com/kephale/brevis"]
                  ["snapshots" {:url "https://clojars.org/repo"

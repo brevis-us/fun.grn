@@ -1,11 +1,11 @@
 (ns fun.grn.core
   (:require [clj-random.core :as random]
             [brevis-utils.parameters :as params])
-  (:import [evolver GRNGenome GRNGene]
-           [evaluators GRNGenomeEvaluator]
-           [grn GRNProtein GRNModel]
+  (:import [fun.grn.grneat.evolver GRNGenome GRNGene]
+           [fun.grn.grneat.evaluators GRNGenomeEvaluator]
+           [fun.grn.grneat.grn GRNProtein GRNModel]
            [java.util Random]
-           [operators GRNAddGeneMutationOperator
+           [fun.grn.grneat.operators GRNAddGeneMutationOperator
             GRNAligningCrossoverOperator_ParentCountProb
             GRNAligningCrossoverOperator_v1
             GRNAligningCrossoverOperator_v1b
@@ -82,7 +82,7 @@
 
 (defn load-from-file
   [filename]
-  (let [grn-state (grn.GRNModel/loadFromFile filename)]
+  (let [grn-state (GRNModel/loadFromFile filename)]
     {:state grn-state
      :num-proteins (.size (.proteins ^GRNModel grn-state))
      :genome (make-genome)}))
@@ -104,8 +104,11 @@
 (defn update-grn
   "Update the state of a GRN."
   [grn]
-  (.evolve ^GRNModel (:state grn)
-    ^int (params/get-param :num-GRN-steps))
+  (if (> (params/get-param :num-GRN-steps) 1)
+    (.evolveMultistep ^GRNModel (:state grn)
+                      ^int (params/get-param :num-GRN-steps))
+    (.evolve ^GRNModel (:state grn)
+             ^int (params/get-param :num-GRN-steps)))
   grn)
 
 (defn get-grn-outputs
